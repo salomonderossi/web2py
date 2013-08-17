@@ -47,7 +47,7 @@ import os
 
 path = os.path.dirname(os.path.abspath(__file__))
 os.chdir(path)
-sys.path = [path]+[p for p in sys.path if not p==path]
+sys.path = [path] + [p for p in sys.path if not p == path]
 
 import gluon.main
 
@@ -56,12 +56,12 @@ import gluon.main
 from wsgitools.scgi.forkpool import SCGIServer
 from wsgitools.filters import WSGIFilterMiddleware, GzipWSGIFilter
 
-wsgiapp=WSGIFilterMiddleware(gluon.main.wsgibase, GzipWSGIFilter)
+wsgiapp = WSGIFilterMiddleware(gluon.main.wsgibase, GzipWSGIFilter)
 
 if LOGGING:
     application = gluon.main.appfactory(wsgiapp=wsgiapp,
                                         logfilename='httpserver.log',
-                                        profilerfilename=None)
+                                        profiler_dir=None)
 else:
     application = wsgiapp
 
@@ -72,5 +72,3 @@ if SOFTCRON:
 # uncomment one of the two rows below depending on the SCGIWSGI server installed
 #scgi.serve_application(application, '', 4000).run()
 SCGIServer(application, port=4000).enable_sighandler().run()
-
-

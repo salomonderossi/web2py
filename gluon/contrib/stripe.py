@@ -1,6 +1,7 @@
 import urllib
 import simplejson
 
+
 class Stripe:
     """
     Usage:
@@ -22,8 +23,13 @@ class Stripe:
     if paid is True than transaction was processed
     """
 
-    def __init__(self,key):
+    URL_CHARGE = 'https://%s:@api.stripe.com/v1/charges'
+    URL_CHECK = 'https://%s:@api.stripe.com/v1/charges/%s'
+    URL_REFUND = 'https://%s:@api.stripe.com/v1/charges/%s/refund'
+
+    def __init__(self, key):
         self.key = key
+
     def charge(self,
                amount,
                currency='usd',
@@ -31,37 +37,43 @@ class Stripe:
                card_exp_month='5',
                card_exp_year='2012',
                card_cvc_check='123',
-               description='test charge'):
-        params = urllib.urlencode({'amount':amount,
-                                   'currency':currency,
-                                   'card[number]':card_number,
-                                   'card[exp_month]':card_exp_month,
-                                   'card[exp_year]':card_exp_year,
-                                   'card[cvc_check]':card_cvc_check,
-                                   'description':description})
-        u = urllib.urlopen('https://%s:@api.stripe.com/v1/charges' % \
-                               self.key,params)
+               token=None,
+               description='test charge',
+               more=None):
+        if token:
+            d = {'amount': amount,
+                 'currency': currency,
+                 'card': token,
+                 'description': description}
+        else:
+            d = {'amount': amount,
+                 'currency': currency,
+                 'card[number]': card_number,
+                 'card[exp_month]': card_exp_month,
+                 'card[exp_year]': card_exp_year,
+                 'card[cvc_check]': card_cvc_check,
+                 'description': description}
+        if more:
+            d.update(mode)
+        params = urllib.urlencode(d)
+        u = urllib.urlopen(self.URL_CHARGE % self.key, params)
         return simplejson.loads(u.read())
 
-    def check(self,charge_id):
-        u = urllib.urlopen('https://%s:@api.stripe.com/v1/charges/%s' % \
-                               (self.key,charge_id))
+    def check(self, charge_id):
+        u = urllib.urlopen(self.URL_CHECK % (self.key, charge_id))
         return simplejson.loads(u.read())
 
-    def refund(self,charge_id):
+    def refund(self, charge_id):
         params = urllib.urlencode({})
-        u = urllib.urlopen('https://%s:@api.stripe.com/v1/charges/%s/refund'%\
-                               (self.key,charge_id),params)
+        u = urllib.urlopen(self.URL_REFUND % (self.key, charge_id), 
+                           params)
         return simplejson.loads(u.read())
 
-if __name__=='__main__':
+if __name__ == '__main__':
     key = raw_input('user>')
-    d=Stripe(key).charge(100)
-    print 'charged',d['paid']
+    d = Stripe(key).charge(100)
+    print 'charged', d['paid']
     s = Stripe(key).check(d[u'id'])
-    print 'paid',s['paid'],s['amount'] ,s['currency']
+    print 'paid', s['paid'], s['amount'], s['currency']
     s = Stripe(key).refund(d[u'id'])
-    print 'refunded',s['refunded']
-
-
-
+    print 'refunded', s['refunded']

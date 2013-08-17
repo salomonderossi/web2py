@@ -6,7 +6,7 @@ echo "This script will:
 5) overwrite /etc/apache2/sites-available/default
 6) restart apache.
 
-You may want to read this cript before running it.
+You may want to read this script before running it.
 
 Press a key to continue...[ctrl+C to abort]"
 
@@ -68,6 +68,7 @@ a2enmod proxy
 a2enmod proxy_http
 a2enmod headers
 a2enmod expires
+a2enmod wsgi
 mkdir /etc/apache2/ssl
 
 echo "creating a self signed certificate"
@@ -82,11 +83,19 @@ echo "================================================="
 echo '
 NameVirtualHost *:80
 NameVirtualHost *:443
+# If the WSGIDaemonProcess directive is specified outside of all virtual
+# host containers, any WSGI application can be delegated to be run within
+# that daemon process group.
+# If the WSGIDaemonProcess directive is specified
+# within a virtual host container, only WSGI applications associated with
+# virtual hosts with the same server name as that virtual host can be
+# delegated to that set of daemon processes.
+WSGIDaemonProcess web2py user=www-data group=www-data
 
 <VirtualHost *:80>
-  WSGIDaemonProcess web2py user=www-data group=www-data
   WSGIProcessGroup web2py
   WSGIScriptAlias / /home/www-data/web2py/wsgihandler.py
+  WSGIPassAuthorization On
 
   <Directory /home/www-data/web2py>
     AllowOverride None
@@ -97,7 +106,7 @@ NameVirtualHost *:443
     </Files>
   </Directory>
 
-  AliasMatch ^/([^/]+)/static/(.*) \
+  AliasMatch ^/([^/]+)/static/(?:_[\d]+.[\d]+.[\d]+/)?(.*) \
            /home/www-data/web2py/applications/$1/static/$2
   <Directory /home/www-data/web2py/applications/*/static/>
     Options -Indexes
@@ -123,8 +132,8 @@ NameVirtualHost *:443
   SSLCertificateKeyFile /etc/apache2/ssl/self_signed.key
 
   WSGIProcessGroup web2py
-
   WSGIScriptAlias / /home/www-data/web2py/wsgihandler.py
+  WSGIPassAuthorization On
 
   <Directory /home/www-data/web2py>
     AllowOverride None
@@ -135,7 +144,7 @@ NameVirtualHost *:443
     </Files>
   </Directory>
 
-  AliasMatch ^/([^/]+)/static/(.*) \
+  AliasMatch ^/([^/]+)/static/(?:_[\d]+.[\d]+.[\d]+/)?(.*) \
         /home/www-data/web2py/applications/$1/static/$2
 
   <Directory /home/www-data/web2py/applications/*/static/>
@@ -158,7 +167,7 @@ NameVirtualHost *:443
 # ln -s /etc/pam.d/apache2 /etc/pam.d/httpd
 # usermod -a -G shadow www-data
 
-echo "restarting apage"
+echo "restarting apache"
 echo "================"
 
 /etc/init.d/apache2 restart
@@ -166,4 +175,3 @@ cd /home/www-data/web2py
 sudo -u www-data python -c "from gluon.widget import console; console();"
 sudo -u www-data python -c "from gluon.main import save_password; save_password(raw_input('admin password: '),443)"
 echo "done!"
-

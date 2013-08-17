@@ -1,3 +1,4 @@
+
 def hello1():
     """ simple page without template """
 
@@ -38,7 +39,6 @@ def hello6():
 
 def status():
     """ page that shows internal status"""
-    response.view = 'generic.html'
     return dict(toolbar=response.toolbar())
 
 
@@ -54,13 +54,6 @@ def raisehttp():
     raise HTTP(400, 'internal error')
 
 
-def raiseexception():
-    """ generates an exeption, logs the event and returns a ticket number """
-
-    1 / 0
-    return 'oops'
-
-
 def servejs():
     """ serves a js document """
 
@@ -68,7 +61,6 @@ def servejs():
     response.headers['Content-Type'] = \
         gluon.contenttype.contenttype('.js')
     return 'alert("This is a Javascript document, it is not supposed to run!");'
-
 
 def makejson():
     import gluon.contrib.simplejson as sj
@@ -100,12 +92,11 @@ def rss_aggregator():
                     pubDate=datetime.datetime.now()) for entry in
                     d.entries])
     response.headers['Content-Type'] = 'application/rss+xml'
-    return rss2.dumps(rss)
-
+    return rss.to_xml(encoding='utf-8')
 
 
 def ajaxwiki():
-    default="""
+    default = """
 # section
 
 ## subsection
@@ -130,12 +121,12 @@ Quoted text
 3 | 0 | 0
 ---------
 """
-    form = FORM(TEXTAREA(_id='text',_name='text',value=default),
+    form = FORM(TEXTAREA(_id='text', _name='text', value=default),
                 INPUT(_type='button',
                       _value='markmin',
                       _onclick="ajax('ajaxwiki_onclick',['text'],'html')"))
     return dict(form=form, html=DIV(_id='html'))
 
+
 def ajaxwiki_onclick():
     return MARKMIN(request.vars.text).xml()
-
